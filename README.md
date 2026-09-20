@@ -27,8 +27,51 @@ The Home tab is the live market overview and application landing page. It should
 - Trending and recently viewed assets
 - Last-updated timestamp and data-provider status
 - Loading, stale-data, and provider-error states
+- A hamburger menu in the top navigation for account and company information
 
-Prices must be sourced from validated providers, display their freshness, and avoid presenting stale data as live data.
+#### Home tab hamburger menu
+
+The Home tab hamburger menu must contain the following sections:
+
+- KYC Register
+- User ID / Account Profile
+- About Us
+- Trust and security information
+- Office location: New York, USA
+
+The KYC section must include:
+
+- onboarding and verification status
+- identity verification flow
+- status badges for pending, approved, and rejected user verification
+- compliance notice and privacy policy link
+
+The User ID section must include:
+
+- unique user identifier
+- account status and authentication state
+- profile details and verification level
+- secure access controls and session management
+
+The About Us section must include:
+
+- the company purpose and vision
+- trust and safety messaging
+- product transparency and risk disclosure
+- company location and office details in New York, USA
+
+The trust section must explain:
+
+- wallet is non-custodial and user-controlled
+- no private keys or seed phrases are stored by the app
+- AI arbitrage and trade results are advisory, not guaranteed returns
+- operations are designed with security, compliance, and transparency in mind
+
+The office-location section must clearly state:
+
+- Headquarters / office location: New York, USA
+- This information is displayed for transparency and user trust
+- The exact legal or registered office details should be verified before launch and updated in the product UI
 
 ### 2. Trade tab
 
@@ -153,6 +196,7 @@ The frontend remains the presentation and signing layer. The backend provides re
 - Use allowlists, rate limits, and provider validation for external integrations
 - Never commit private keys, seed phrases, or `.env` secrets
 - Reconcile trade and arbitrage records against trusted execution and on-chain data
+- Protect KYC and user profile information in compliance with privacy and trust requirements
 
 ## AI arbitrage guardrails
 
@@ -176,7 +220,8 @@ These features are for research and decision support only. They do not guarantee
 5. Implement trade-history storage, indexing, filtering, and reconciliation
 6. Implement the five-level AI arbitrage analysis pipeline, risk controls, and arbitrage history
 7. Implement wallet balances, held-coin views, approvals, and transaction history
-8. Validate on testnets and create a production launch checklist
+8. Add KYC onboarding, account profile, and trust/privacy sections in the Home navigation
+9. Validate on testnets and create a production launch checklist
 
 ## Contribution expectations
 
