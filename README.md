@@ -14,6 +14,38 @@ GlobalNetwork is designed as a non-custodial crypto wallet experience that combi
 
 This repository is intentionally structured for a future production-ready dApp, with clear separation between frontend UX, backend services, and contract integrations.
 
+## Authentication model
+
+### User authentication via wallet connection
+
+Users must be able to login using any supported wallet by connecting their wallet to the dApp.
+
+Requirements:
+
+- Wallet connection must support multiple wallet providers and supported chains.
+- A login flow must verify ownership of the wallet address through a signature challenge.
+- The backend must bind the authenticated session to the connected wallet address and selected network.
+- User sessions are wallet-linked and require secure wallet-address validation on each request.
+- Users may reconnect, switch wallets, and disconnect without exposing private keys or seed phrases.
+- Wallet authentication must not be treated as custody or permission to move funds automatically.
+- The app must display wallet connection status clearly to the user.
+
+### Admin authentication via web login
+
+The admin account must authenticate through a dedicated web interface, separate from the wallet-login flow for end users.
+
+Requirements:
+
+- There is exactly one admin account in the system.
+- The admin logs in through a web admin portal, not through a wallet connection.
+- Admin authentication must be server-side and protected by strong authentication, preferably MFA.
+- Admin identity must be validated against a secure identity-provider subject or deployment credential.
+- The admin login flow must be separate from user wallet authentication and must not share the same session or authorization model.
+- No client-side role, wallet address, cookie value, or local-storage value may be used to authorize admin access.
+- Every admin action must be logged with actor, timestamp, target, reason, and outcome.
+
+This separation ensures that ordinary users can sign in via wallet and the single admin can sign in via a secure web login mechanism.
+
 ## Frontend product structure
 
 The frontend must contain four primary tabs:
@@ -82,7 +114,7 @@ Customer support requirements:
 
 - direct-message chat interface
 - support conversation history visible in the panel
-- quick contact and response status
+- quick support access and response status
 - connection to admin-side support controls in the backend
 - no ticket form required
 - no request for private keys, wallet phrases, or passphrases
@@ -162,32 +194,6 @@ The Wallet tab is the user's portfolio and transaction area. It should show:
 
 The wallet tab must not request or store private keys or seed phrases. Balances and transaction history must be clearly associated with the selected wallet address and chain.
 
-## Core product goals
-
-### Wallet and portfolio
-
-- Connect supported wallets
-- View balance, network, and token holdings
-- Track transaction history and approval state
-- Prepare and review transactions before signing
-
-### Trading system
-
-- Display market pricing and token pair data
-- Compare routes and swap opportunities
-- Show price impact, slippage, and fees
-- Allow explicit user confirmation before execution
-- Monitor order and transaction status
-- Store and display auditable trade history
-
-### AI Arbitrage system
-
-- Compare market prices across venues and chains
-- Estimate spread, gas cost, risk, and execution viability
-- Surface opportunities with confidence and risk context
-- Require user approval before any action is executed
-- Treat AI output as advisory, not guaranteed profit
-
 ## Backend admin and support control
 
 The backend must include a single administrative account to manage support and operational controls.
@@ -227,7 +233,8 @@ docs/            Architecture, product, and risk documentation
 ## Recommended architecture
 
 ```text
-User wallet -> Frontend tabs -> Backend API -> Market Data + AI Analysis -> User decision -> Wallet signature
+Wallet user login -> Frontend tabs -> Backend API -> Market Data + AI Analysis -> User decision -> Wallet signature
+Admin web login -> Admin portal -> Admin controls -> Support, policies, risk review, and system operations
 ```
 
 The frontend remains the presentation and signing layer. The backend provides read-only market insights and operational services. No private key or seed phrase should be stored in the app or repository.
@@ -236,6 +243,7 @@ The frontend remains the presentation and signing layer. The backend provides re
 
 - Non-custodial by default
 - User signs transactions from their own wallet
+- Admin login is separate and web-based with strong auth
 - Validate chain IDs, token addresses, signatures, and transaction calldata
 - Require explicit confirmation before sending or signing any transaction
 - Use allowlists, rate limits, and provider validation for external integrations
@@ -262,13 +270,14 @@ These features are for research and decision support only. They do not guarantee
 1. Define supported wallets, chains, markets, venues, and data providers
 2. Build the four-tab frontend navigation and responsive layouts
 3. Add the floating direct-message customer-service panel
-4. Implement live market prices and resilient data-refresh states
-5. Implement trading pairs, live candlestick charts, five trade levels, and transaction review
-6. Implement trade-history storage, indexing, filtering, and reconciliation
-7. Implement the five-level AI arbitrage analysis pipeline, risk controls, settlement verification, and arbitrage history
-8. Implement wallet balances, held-coin views, approvals, transaction history, KYC onboarding, and trust/privacy sections in the Home menu
-9. Implement the single-admin support and operational control dashboard
-10. Validate on testnets and create a production launch checklist
+4. Implement wallet login and wallet-linking flow for any supported wallet
+5. Implement a separate web-based admin login flow for the single admin
+6. Implement live market prices and resilient data-refresh states
+7. Implement trading pairs, live candlestick charts, five trade levels, and transaction review
+8. Implement trade-history storage, indexing, filtering, and reconciliation
+9. Implement the five-level AI arbitrage analysis pipeline, risk controls, settlement verification, and arbitrage history
+10. Implement wallet balances, held-coin views, approvals, transaction history, KYC onboarding, and trust/privacy sections in the Home menu
+11. Validate on testnets and create a production launch checklist
 
 ## Contribution expectations
 
