@@ -62,13 +62,26 @@ Trade history must be persisted and displayed per connected wallet and chain. It
 
 ### 3. AI Arbitrage tab
 
-The AI Arbitrage tab should display opportunities identified by comparing prices and liquidity across supported venues. It must contain five analysis levels:
+The AI Arbitrage tab should display opportunities identified by comparing prices and liquidity across supported venues. It must contain five analysis levels and must maintain a dedicated arbitrage history view.
 
-1. **Level 1 — Market scan:** discover price differences between supported venues and chains.
-2. **Level 2 — Opportunity validation:** confirm quote freshness, liquidity, volume, and executable trade size.
-3. **Level 3 — Cost analysis:** calculate estimated gas, protocol fees, slippage, bridge costs, and net return.
-4. **Level 4 — Risk analysis:** evaluate contract, liquidity, latency, bridge, provider, execution, and market risks.
-5. **Level 5 — Execution readiness:** show confidence, expiry, final quote, transaction simulation, and the user's approval action.
+#### Five AI arbitrage levels
+
+| Level | Required capital | Cycle time | Target profit |
+|---|---:|---:|---:|
+| Level 1 | 1,000 USDT | 2 days | 1% |
+| Level 2 | 30,000 USDT | 3 days | 1.5% |
+| Level 3 | 50,000 USDT | 5 days | 3% |
+| Level 4 | 100,000 USDT | 7 days | 5% |
+| Level 5 | 500,000 USDT | 15 days | 10% |
+
+The AI Arbitrage tab must also include:
+
+- opportunity scanning across supported exchanges and chains
+- quote freshness and venue comparison
+- spread and estimated net-return calculation
+- confidence, risk, and latency information
+- expiry countdown, final approval status, and execution summary
+- arbitrage history with filters for level, cycle, amount, status, venue, timestamp, and profit result
 
 Each opportunity should show its source venues, timestamp, gross spread, net estimated return, trade-size limit, confidence, risks, and expiry time. AI output is advisory and must never silently sign, submit, or custody funds. A fresh quote and explicit wallet confirmation are required before execution.
 
@@ -139,7 +152,7 @@ The frontend remains the presentation and signing layer. The backend provides re
 - Require explicit confirmation before sending or signing any transaction
 - Use allowlists, rate limits, and provider validation for external integrations
 - Never commit private keys, seed phrases, or `.env` secrets
-- Reconcile trade records against trusted execution and on-chain data
+- Reconcile trade and arbitrage records against trusted execution and on-chain data
 
 ## AI arbitrage guardrails
 
@@ -161,7 +174,7 @@ These features are for research and decision support only. They do not guarantee
 3. Implement live market prices and resilient data-refresh states
 4. Implement trading pairs, live candlestick charts, five trade levels, and transaction review
 5. Implement trade-history storage, indexing, filtering, and reconciliation
-6. Implement the five-level AI arbitrage analysis pipeline and risk controls
+6. Implement the five-level AI arbitrage analysis pipeline, risk controls, and arbitrage history
 7. Implement wallet balances, held-coin views, approvals, and transaction history
 8. Validate on testnets and create a production launch checklist
 
@@ -171,4 +184,4 @@ Pull requests should include a clear description of the changes, the risk area, 
 
 ## Disclaimer
 
-This project is a software engineering starter for a crypto wallet and trading platform. The five trade-level target percentages are configurable product requirements, not promises or guaranteed returns. Cryptocurrency trading involves risk, market volatility, and potential loss of funds. This repository is not financial advice.
+This project is a software engineering starter for a crypto wallet and trading platform. The trade and arbitrage target percentages are configurable product requirements, not promises or guaranteed returns. Cryptocurrency trading involves risk, market volatility, and potential loss of funds. This repository is not financial advice.
