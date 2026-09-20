@@ -1,89 +1,52 @@
-# Backend administration requirements
+# GlobalNetwork admin backend
 
-The backend must provide a secure, server-authorized admin control plane for the single administrator. The admin portal is hosted at:
+This directory contains a minimal server-side admin sign-in service. It is separate from the Next.js frontend and must be deployed as its own Node.js service at `https://www.cryptotrade.agency`.
 
-- https://www.cryptotrade.agency/admin
+## Local setup
 
-## Allowed admin capabilities
+```bash
+cd backend
+cp .env.example .env
+npm install
+```
 
-### User lookup
+Generate a password hash:
 
-- Search by internal User ID and linked wallet address.
-- Display only the minimum information needed for support, compliance, and risk operations.
-- Mask sensitive identity data by default.
-- Require an audit reason for every sensitive lookup.
-- Enforce retention, export, and deletion policies for personal data.
+```bash
+ADMIN_PASSWORD='use-a-long-unique-password' node --input-type=module -e "import argon2 from 'argon2'; console.log(await argon2.hash(process.env.ADMIN_PASSWORD, { type: argon2.argon2id }))"
+```
 
-### Points ledger
+Generate a session secret:
 
-Points may be adjusted only through an append-only, double-entry ledger:
+```bash
+openssl rand -base64 48
+```
 
-- User ID
-- signed adjustment amount
-- reason code and free-text justification
-- actor and timestamp
-- correlation/reference ID
-- before and after balances
-- reversal workflow instead of destructive edits
+Put both generated values in `.env`, then run:
 
-Points must never represent cash, trading profit, or guaranteed returns unless explicitly defined and legally approved as a separate product balance.
+```bash
+npm start
+```
 
-### Trading controls
+Open `http://localhost:3000/admin` and sign in. The service exposes `GET /health` for deployment checks.
 
-The administrator may:
+## Production deployment
 
-- pause or resume execution globally or by supported market
-- place a user or strategy into review, restricted, or read-only status
-- cancel or reject an unsafe pending request before signing/submission
-- review actual execution, settlement, and on-chain transaction results by User ID
-- reconcile records and correct display errors using an audited correction entry
+Deploy the `backend` directory as the service root. Set these production environment variables in the backend host, not in the frontend project:
 
-The administrator must **not** force, fabricate, or secretly alter a user's trade to win or lose. Trade outcomes must be derived from the actual quote, signed transaction, execution response, settlement result, and on-chain data. Any test outcome must be isolated to a clearly labelled sandbox/test environment and never affect production users.
+- `NODE_ENV=production`
+- `PORT` supplied by the host
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD_HASH`
+- `ADMIN_SESSION_SECRET` (at least 32 random characters)
+- `APP_ORIGIN=https://www.cryptotrade.agency`
 
-### KYC review
+Use HTTPS and configure the custom domain so `/admin` points to this Node service. The frontend `/admin` redirect already targets that URL.
 
-KYC reviewers may approve, reject, or request more information only based on the configured compliance policy and verification-provider result:
+## Security notes
 
-- pending
-- additional information required
-- approved
-- rejected
-- expired
-
-Every decision requires a reason code, reviewer identity, timestamp, provider reference, and immutable audit event. Rejected users must receive the permitted appeal or resubmission path. KYC documents and identity data must be encrypted, access-controlled, and never exposed in logs or client-side code.
-
-### Customer service
-
-- Support agents/admin can view authenticated conversations scoped to a user.
-- Messages are stored with User ID, wallet context when available, timestamps, delivery status, and audit history.
-- Users can open, close, and export their permitted conversation history.
-- The system must block requests for private keys, seed phrases, wallet passwords, or MFA codes.
-- Support access must be logged and limited by role.
-
-## Security and privacy requirements
-
-- Exactly one production admin account, protected by strong authentication and MFA.
-- Server-side authorization for every administrative operation; never trust a client-side role flag.
-- Short-lived sessions, CSRF protection, rate limiting, re-authentication for sensitive actions, and secure cookies.
-- Role and permission checks even if only one admin exists today, so the system can evolve safely.
-- Immutable audit logs for logins, user lookups, points changes, KYC decisions, support access, restrictions, and policy changes.
-- Encrypt sensitive data at rest and in transit.
-- Do not provide unrestricted access to all user information; use least privilege, masking, purpose limitation, and documented retention rules.
-- Separate production data from development/test data.
-- Add approval or dual-control workflow for high-risk policy changes.
-
-## Suggested API surface
-
-All routes require server-side admin authorization and audit logging:
-
-- `GET /admin/users/:userId`
-- `GET /admin/users/:userId/activity`
-- `POST /admin/users/:userId/points-adjustments`
-- `POST /admin/users/:userId/trading-restrictions`
-- `POST /admin/trading/pause`
-- `POST /admin/kyc/:submissionId/decision`
-- `GET /admin/support/conversations`
-- `POST /admin/support/conversations/:conversationId/messages`
-- `GET /admin/audit-events`
-
-No endpoint may provide a control that fabricates trading outcomes or bypasses the source-of-truth execution and settlement process.
+- Passwords are verified with Argon2id and are never stored in plaintext.
+- Sessions are signed, short-lived, HTTP-only cookies.
+- Login attempts are rate-limited.
+- Helmet adds baseline security headers.
+- This starter intentionally does not fake user records, KYC decisions, points, balances, or trading outcomes. Add those features behind authenticated, audited server routes and a real database.
