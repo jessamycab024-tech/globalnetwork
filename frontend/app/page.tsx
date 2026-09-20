@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 type Tab = 'home' | 'trade' | 'arbitrage' | 'wallet';
 type EthereumProvider = { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
 type Coin = { id: string; symbol: string; name: string; current_price: number | null; price_change_percentage_24h: number | null; market_cap_rank?: number; image?: string };
+type ChartPoint = [number, number];
 
 declare global { interface Window { ethereum?: EthereumProvider } }
 
@@ -68,7 +69,7 @@ export default function HomePage() {
   }
 
   return <main className="app-shell">
-    <header className="topbar"><button className="brand" onClick={() => setActiveTab('home')} aria-label="Go to home"><span className="brand-mark">G</span><span>GlobalNetwork</span></button><div className="topbar-actions"><span className="live-indicator"><i /> {dataStatus}</span><a className="admin-link" href="/admin">Admin portal</a><button className="wallet-button" onClick={connectWallet}>{shortWallet || 'Connect wallet'}</button><button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Open menu">☰</button></div></header>
+    <header className="topbar"><button className="brand" onClick={() => setActiveTab('home')} aria-label="Go to home"><span className="brand-mark">G</span><span>GlobalNetwork</span></button><div className="topbar-actions"><span className="live-indicator"><i /> {dataStatus}</span><button className="wallet-button" onClick={connectWallet}>{shortWallet || 'Connect wallet'}</button><button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Open menu">☰</button></div></header>
     {menuOpen && <aside className="account-menu"><div className="menu-title">Account & trust</div>{['KYC Register', 'User ID / Profile', 'About Us', 'Trust & Security', 'Office: New York, USA'].map((item) => <button key={item} onClick={() => setMenuOpen(false)}>{item}</button>)}</aside>}
     <div className="layout"><nav className="sidebar" aria-label="Main navigation"><div className="nav-label">Workspace</div>{navItems.map((item) => <button key={item.id} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => setActiveTab(item.id)}><span>{item.icon}</span>{item.label}</button>)}<div className="sidebar-spacer" /><div className="security-note"><span>✓</span><div><strong>Non-custodial</strong><small>You control your keys</small></div></div></nav>
       <section className="content">{walletError && <div className="alert">{walletError}</div>}{activeTab === 'home' && <HomeTab wallet={shortWallet} nativeBalance={nativeBalance} coins={filteredCoins} search={coinSearch} setSearch={setCoinSearch} status={dataStatus} onConnect={connectWallet} />}{activeTab === 'trade' && <TradeTab />}{activeTab === 'arbitrage' && <ArbitrageTab />}{activeTab === 'wallet' && <WalletTab wallet={shortWallet} nativeBalance={nativeBalance} onConnect={connectWallet} />}</section></div>
@@ -83,7 +84,41 @@ function HomeTab({ wallet, nativeBalance, coins, search, setSearch, status, onCo
     <div className="info-grid"><InfoCard title="Real wallet data" text={wallet ? `Connected ${wallet}. The displayed balance is read from the wallet provider.` : 'Connect your wallet to read your current on-chain balance.'} /><InfoCard title="Live provider data" text="Market values are refreshed periodically and marked unavailable when the provider cannot be reached." /></div></>;
 }
 
-function TradeTab() { return <><PageTitle eyebrow="Execution workspace" title="Trade with clarity" text="Review every quote, fee, and risk before signing from your wallet." /><div className="two-column"><section className="panel"><div className="panel-heading"><h2>New trade</h2><span className="tag">Testnet safe</span></div><label>Trading pair<select><option>BTC / USDT</option><option>ETH / USDT</option><option>SOL / USDT</option></select></label><div className="segmented"><button className="selected">Buy</button><button>Sell</button></div><label>Amount<input placeholder="0.00 USDT" inputMode="decimal" /></label><label>Strategy level<select><option>Level 1 · 60 seconds</option><option>Level 2 · 120 seconds</option><option>Level 3 · 180 seconds</option><option>Level 4 · 360 seconds</option><option>Level 5 · 720 seconds</option></select></label><button className="primary-button full">Review transaction</button></section><section className="panel chart-panel"><div className="panel-heading"><h2>Live chart</h2><span className="tag">Provider required</span></div><div className="chart-placeholder"><span>Connect a live chart provider to display candles</span></div></section></div></>; }
+function TradeTab() {
+  const [pair, setPair] = useState('bitcoin');
+  const [chart, setChart] = useState<ChartPoint[]>([]);
+  const [chartStatus, setChartStatus] = useState('Loading live chart');
+  const coinName = pair === 'ethereum' ? 'ETH / USDT' : pair === 'solana' ? 'SOL / USDT' : 'BTC / USDT';
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadChart() {
+      setChartStatus('Loading live chart');
+      try {
+        const response = await fetch(`https://api.coingecko.com/api/v3/coins/${pair}/market_chart?vs_currency=usd&days=1&interval=hourly`, { cache: 'no-store' });
+        if (!response.ok) throw new Error('Chart provider unavailable');
+        const body = (await response.json()) as { prices?: ChartPoint[] };
+        if (!cancelled && body.prices?.length) { setChart(body.prices); setChartStatus(`Live · ${new Date().toLocaleTimeString()}`); }
+        else if (!cancelled) setChartStatus('No chart data available');
+      } catch { if (!cancelled) { setChart([]); setChartStatus('Live chart unavailable'); } }
+    }
+    loadChart();
+    const interval = window.setInterval(loadChart, 60_000);
+    return () => { cancelled = true; window.clearInterval(interval); };
+  }, [pair]);
+
+  return <><PageTitle eyebrow="Execution workspace" title="Trade with clarity" text="Review every quote, fee, and risk before signing from your wallet." /><div className="two-column"><section className="panel"><div className="panel-heading"><h2>New trade</h2><span className="tag">Testnet safe</span></div><label>Trading pair<select value={pair} onChange={(event) => setPair(event.target.value)}><option value="bitcoin">BTC / USDT</option><option value="ethereum">ETH / USDT</option><option value="solana">SOL / USDT</option></select></label><div className="segmented"><button className="selected">Buy</button><button>Sell</button></div><label>Amount<input placeholder="0.00 USDT" inputMode="decimal" /></label><label>Strategy level<select><option>Level 1 · 60 seconds</option><option>Level 2 · 120 seconds</option><option>Level 3 · 180 seconds</option><option>Level 4 · 360 seconds</option><option>Level 5 · 720 seconds</option></select></label><button className="primary-button full">Review transaction</button></section><section className="panel chart-panel"><div className="panel-heading"><div><h2>{coinName}</h2><p className="muted">{chartStatus}</p></div><span className="tag">1 day</span></div><LiveChart points={chart} /></section></div></>;
+}
+
+function LiveChart({ points }: { points: ChartPoint[] }) {
+  if (points.length < 2) return <div className="chart-placeholder"><span>Waiting for verified live chart data…</span></div>;
+  const values = points.map((point) => point[1]);
+  const min = Math.min(...values); const max = Math.max(...values); const range = max - min || 1;
+  const path = points.map((point, index) => `${(index / (points.length - 1)) * 100},${100 - ((point[1] - min) / range) * 88 - 6}`).join(' ');
+  const last = values[values.length - 1];
+  return <div className="live-chart" aria-label="Live cryptocurrency price chart"><svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img"><defs><linearGradient id="chart-gradient" x1="0" x2="1"><stop offset="0%" stopColor="#8a7cff" /><stop offset="100%" stopColor="#5edcff" /></linearGradient></defs><polyline points={path} fill="none" stroke="url(#chart-gradient)" strokeWidth="1.3" vectorEffect="non-scaling-stroke" /></svg><div className="chart-price">${last.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div><small>Source: CoinGecko · last 24 hours</small></div>;
+}
+
 function ArbitrageTab() { return <><PageTitle eyebrow="Decision support" title="AI Arbitrage" text="Find venue spreads with transparent estimates. Every execution requires fresh quotes and your approval." /><div className="level-row">{['Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5'].map((level, index) => <button className={`level-card ${index === 0 ? 'selected' : ''}`} key={level}><strong>{level}</strong><small>{[1, 30, 50, 100, 500][index].toLocaleString()}k USDT max</small><span>{[1, 1.5, 3, 5, 10][index]}% target</span></button>)}</div><section className="panel"><div className="panel-heading"><div><h2>Verified opportunities</h2><p className="muted">Live venue quotes are required before an opportunity can be executed.</p></div><span className="tag">Awaiting provider</span></div><p className="muted">No executable opportunity is displayed until fresh market and liquidity data is available.</p></section></>; }
 function WalletTab({ wallet, nativeBalance, onConnect }: { wallet: string; nativeBalance: string | null; onConnect: () => void }) { return <><PageTitle eyebrow="Your assets" title="Wallet" text="Connect any supported wallet to view on-chain balances and transactions." /><section className="wallet-hero panel"><div><p className="muted">Verified native balance</p><div className="balance">{nativeBalance || '—'}</div><span className="positive">{wallet ? 'Read from connected wallet' : 'Wallet not connected'}</span></div>{wallet ? <div className="address-chip">◈ {wallet}</div> : <button className="primary-button" onClick={onConnect}>Connect wallet</button>}</section><section className="panel"><div className="panel-heading"><h2>Token balances</h2><span className="muted">Requires chain indexer for ERC-20 assets</span></div><p className="muted">No token amount is shown until a supported indexer returns verified wallet data. This prevents placeholder amounts from being mistaken for real funds.</p></section></>; }
 function SupportPanel({ onClose, wallet }: { onClose: () => void; wallet: string }) { return <div className="support-overlay" onClick={onClose}><section className="support-panel" onClick={(event) => event.stopPropagation()}><div className="panel-heading"><div><h2>Customer support</h2><p className="muted">Direct message · {wallet || 'Connect wallet'}</p></div><button className="icon-button" onClick={onClose}>×</button></div><div className="chat-message">Hi! How can we help today?<small>GlobalNetwork Support · now</small></div><textarea placeholder="Write a message…" /><button className="primary-button full" onClick={onClose}>Send message</button><p className="support-warning">Never share a private key or seed phrase with anyone.</p></section></div>; }
