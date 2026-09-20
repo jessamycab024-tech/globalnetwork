@@ -41,8 +41,24 @@ The Trade tab is the trading workspace. It should contain:
 - Token-pair selection and route/quote comparison
 - Slippage, price impact, network fee, and protocol fee estimates
 - Transaction preview, wallet approval, and transaction status
+- A trade-history view with filters for date, pair, side, level, status, amount, fees, and transaction hash
+- Trade detail pages showing entry data, exit data, timestamps, execution price, realized result, and failure reason where applicable
 
-Every trade must require explicit user confirmation in the connected wallet. The interface must handle rejected, pending, failed, expired, and replaced transactions.
+#### Five trade levels
+
+The Trade tab must provide five configurable trade levels. The values below are product requirements for the initial configuration and must be presented as target parameters or strategy settings—not guaranteed returns:
+
+| Level | Required capital | Trading time | Target profit |
+|---|---:|---:|---:|
+| Level 1 | 300–20,000 USDT | 60 seconds | 18% |
+| Level 2 | 20,000–30,000 USDT | 120 seconds | 23% |
+| Level 3 | 30,000–50,000 USDT | 180 seconds | 27.5% |
+| Level 4 | 50,000–100,000 USDT | 360 seconds | 50% |
+| Level 5 | 100,000–1,000,000 USDT | 720 seconds | 100% |
+
+The UI must clearly show the selected level, required capital range, configured duration, target profit, fees, risks, and current status before a user proceeds. The system must not represent target profit as guaranteed, hide losses, or execute a trade without explicit user approval.
+
+Trade history must be persisted and displayed per connected wallet and chain. It should support pagination, loading and error states, export where appropriate, and reconciliation with on-chain transaction data. Never fabricate a completed trade when execution data is unavailable.
 
 ### 3. AI Arbitrage tab
 
@@ -87,6 +103,7 @@ The wallet tab must not request or store private keys or seed phrases. Balances 
 - Show price impact, slippage, and fees
 - Allow explicit user confirmation before execution
 - Monitor order and transaction status
+- Store and display auditable trade history
 
 ### AI Arbitrage system
 
@@ -100,7 +117,7 @@ The wallet tab must not request or store private keys or seed phrases. Balances 
 
 ```text
 frontend/        User-facing wallet, dashboard, trading, charts, and AI dashboard UI
-backend/         APIs, market data services, execution orchestration, and analysis jobs
+backend/         APIs, market data services, execution orchestration, trade history, and analysis jobs
 contracts/       Smart contract interfaces, ABIs, deployment metadata, and integrations
 docs/            Architecture, product, and risk documentation
 .github/         PR automation, issue templates, and workflow files
@@ -122,6 +139,7 @@ The frontend remains the presentation and signing layer. The backend provides re
 - Require explicit confirmation before sending or signing any transaction
 - Use allowlists, rate limits, and provider validation for external integrations
 - Never commit private keys, seed phrases, or `.env` secrets
+- Reconcile trade records against trusted execution and on-chain data
 
 ## AI arbitrage guardrails
 
@@ -141,10 +159,11 @@ These features are for research and decision support only. They do not guarantee
 1. Define supported wallets, chains, markets, venues, and data providers
 2. Build the four-tab frontend navigation and responsive layouts
 3. Implement live market prices and resilient data-refresh states
-4. Implement trading pairs, live candlestick charts, quotes, and transaction review
-5. Implement the five-level AI arbitrage analysis pipeline and risk controls
-6. Implement wallet balances, held-coin views, approvals, and transaction history
-7. Validate on testnets and create a production launch checklist
+4. Implement trading pairs, live candlestick charts, five trade levels, and transaction review
+5. Implement trade-history storage, indexing, filtering, and reconciliation
+6. Implement the five-level AI arbitrage analysis pipeline and risk controls
+7. Implement wallet balances, held-coin views, approvals, and transaction history
+8. Validate on testnets and create a production launch checklist
 
 ## Contribution expectations
 
@@ -152,4 +171,4 @@ Pull requests should include a clear description of the changes, the risk area, 
 
 ## Disclaimer
 
-This project is a software engineering starter for a crypto wallet and trading platform. Cryptocurrency trading involves risk, market volatility, and potential loss of funds. This repository is not financial advice.
+This project is a software engineering starter for a crypto wallet and trading platform. The five trade-level target percentages are configurable product requirements, not promises or guaranteed returns. Cryptocurrency trading involves risk, market volatility, and potential loss of funds. This repository is not financial advice.
