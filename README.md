@@ -10,6 +10,7 @@ GlobalNetwork is designed as a non-custodial crypto wallet experience that combi
 - Multi-chain balance and transaction visibility
 - Trading and execution workflows
 - AI-assisted arbitrage detection and risk analysis
+- Direct customer support and secure support messaging
 
 This repository is intentionally structured for a future production-ready dApp, with clear separation between frontend UX, backend services, and contract integrations.
 
@@ -36,8 +37,8 @@ The Home tab hamburger menu must contain the following sections:
 - KYC Register
 - User ID / Account Profile
 - About Us
-- Trust and security information
-- Office location: New York, USA
+- Trust & Security
+- Office: New York, USA
 
 The KYC section must include:
 
@@ -72,6 +73,22 @@ The office-location section must clearly state:
 - Headquarters / office location: New York, USA
 - This information is displayed for transparency and user trust
 - The exact legal or registered office details should be verified before launch and updated in the product UI
+
+#### Floating customer service
+
+The frontend must contain a floating customer-service button that remains visible on all major screens while the user is inside the app. The button should open a lightweight direct-message panel without sending the user to a separate ticket page or support form.
+
+Customer support requirements:
+
+- direct-message chat interface
+- support conversation history visible in the panel
+- quick contact and response status
+- connection to admin-side support controls in the backend
+- no ticket form required
+- no request for private keys, wallet phrases, or passphrases
+- all support messages must be scoped to the authenticated user and wallet context
+
+This customer-service panel should always be available for wallet, trading, AI arbitrage, and account support questions.
 
 ### 2. Trade tab
 
@@ -128,6 +145,8 @@ The AI Arbitrage tab must also include:
 
 Each opportunity should show its source venues, timestamp, gross spread, net estimated return, trade-size limit, confidence, risks, and expiry time. AI output is advisory and must never silently sign, submit, or custody funds. A fresh quote and explicit wallet confirmation are required before execution.
 
+The AI arbitrage engine may auto-populate settlement amounts only after the cycle is complete and the required data is verified. The backend must calculate final results from actual execution and settlement data, not from a user-visible target alone.
+
 ### 4. Wallet tab
 
 The Wallet tab is the user's portfolio and transaction area. It should show:
@@ -169,11 +188,37 @@ The wallet tab must not request or store private keys or seed phrases. Balances 
 - Require user approval before any action is executed
 - Treat AI output as advisory, not guaranteed profit
 
+## Backend admin and support control
+
+The backend must include a single administrative account to manage support and operational controls.
+
+Requirements:
+
+- exactly one admin account exists in the system
+- the admin is configured at deployment through a secure, immutable identity or secret
+- the admin is allowed to monitor customer support messages, review support history, and manage operational controls
+- the admin may pause or resume trading, arbitrage, or support features if needed
+- the admin may review risk events and execution data
+- the admin may not arbitrarily assign winning or losing outcomes to users
+- all admin actions must be logged with actor, timestamp, target, reason, and result
+- user support should remain linked to the authenticated user and wallet context
+
+The admin dashboard should let the admin:
+
+- view customer support chats
+- review active/inactive support conversations
+- identify suspicious or risky users and activity
+- review arbitrage and trade execution history
+- freeze or limit risky operations based on policy
+- resume operations only after risk review and approval
+
+Customer support and admin controls should be clearly separated from wallet custody and should never allow arbitrary credential or wallet access.
+
 ## Planned repository structure
 
 ```text
-frontend/        User-facing wallet, dashboard, trading, charts, and AI dashboard UI
-backend/         APIs, market data services, execution orchestration, trade history, and analysis jobs
+frontend/        User-facing wallet, dashboard, trading, charts, AI dashboard, and floating support UI
+backend/         APIs, market data services, execution orchestration, trade history, arbitrage jobs, support control, and admin policy
 contracts/       Smart contract interfaces, ABIs, deployment metadata, and integrations
 docs/            Architecture, product, and risk documentation
 .github/         PR automation, issue templates, and workflow files
@@ -196,7 +241,8 @@ The frontend remains the presentation and signing layer. The backend provides re
 - Use allowlists, rate limits, and provider validation for external integrations
 - Never commit private keys, seed phrases, or `.env` secrets
 - Reconcile trade and arbitrage records against trusted execution and on-chain data
-- Protect KYC and user profile information in compliance with privacy and trust requirements
+- Protect KYC, support, and user profile information in compliance with privacy and trust requirements
+- Limit admin access to a single account and enforce MFA or equivalent strong authentication
 
 ## AI arbitrage guardrails
 
@@ -215,13 +261,14 @@ These features are for research and decision support only. They do not guarantee
 
 1. Define supported wallets, chains, markets, venues, and data providers
 2. Build the four-tab frontend navigation and responsive layouts
-3. Implement live market prices and resilient data-refresh states
-4. Implement trading pairs, live candlestick charts, five trade levels, and transaction review
-5. Implement trade-history storage, indexing, filtering, and reconciliation
-6. Implement the five-level AI arbitrage analysis pipeline, risk controls, and arbitrage history
-7. Implement wallet balances, held-coin views, approvals, and transaction history
-8. Add KYC onboarding, account profile, and trust/privacy sections in the Home navigation
-9. Validate on testnets and create a production launch checklist
+3. Add the floating direct-message customer-service panel
+4. Implement live market prices and resilient data-refresh states
+5. Implement trading pairs, live candlestick charts, five trade levels, and transaction review
+6. Implement trade-history storage, indexing, filtering, and reconciliation
+7. Implement the five-level AI arbitrage analysis pipeline, risk controls, settlement verification, and arbitrage history
+8. Implement wallet balances, held-coin views, approvals, transaction history, KYC onboarding, and trust/privacy sections in the Home menu
+9. Implement the single-admin support and operational control dashboard
+10. Validate on testnets and create a production launch checklist
 
 ## Contribution expectations
 
