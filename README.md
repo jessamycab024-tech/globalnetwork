@@ -11,8 +11,37 @@ GlobalNetwork is designed as a non-custodial crypto wallet experience that combi
 - Trading and execution workflows
 - AI-assisted arbitrage detection and risk analysis
 - Direct customer support and secure support messaging
+- Globally available, live-data infrastructure with stable failover behavior
 
-This repository is intentionally structured for a future production-ready dApp, with clear separation between frontend UX, backend services, and contract integrations.
+This repository is intentionally structured for a future production-ready dApp, with clear separation between frontend UX, backend services, data providers, and contract integrations.
+
+## Global live-data and stability requirements
+
+All market, wallet, trade, arbitrage, and transaction information must be based on current data from trusted providers and verifiable execution sources. The database is a synchronized record and must not be treated as the sole source of truth for on-chain balances or settlement.
+
+### Live data
+
+- Use WebSocket or streaming feeds for prices, order books, candles, and market events where available.
+- Use short-interval polling as a controlled fallback when streaming is unavailable.
+- Display provider timestamp, block number or event sequence where applicable, and data freshness.
+- Mark data as stale, delayed, unavailable, or provider-degraded instead of presenting old values as live.
+- Use trusted RPCs, indexers, exchange APIs, and market-data providers with schema and signature validation.
+- Reconcile wallet balances, trades, arbitrage cycles, and transaction status with on-chain or trusted settlement data.
+- Store all timestamps in UTC and convert them only for user display.
+
+### Global stability
+
+- Deploy the API and data services across multiple regions where supported.
+- Use health checks, load balancing, database replication, backups, and documented disaster recovery.
+- Configure provider failover, timeouts, retries with backoff, circuit breakers, and rate limits.
+- Use idempotency keys and durable job queues to prevent duplicate trades, settlements, messages, or credits.
+- Make workers resumable and run reconciliation jobs after outages or provider interruptions.
+- Separate development, staging, and production environments with controlled releases and rollback procedures.
+- Monitor latency, feed freshness, error rate, queue depth, database health, RPC health, and settlement mismatches.
+- Design for graceful degradation: read-only mode may remain available when execution or a provider is unavailable.
+- Use immutable audit events for authentication, admin actions, trading, arbitrage, support, and settlement.
+
+The system must never claim guaranteed availability, execution, or profit. Production stability requires load testing, security review, provider agreements, operational runbooks, and regional compliance review.
 
 ## Authentication model
 
@@ -277,7 +306,8 @@ These features are for research and decision support only. They do not guarantee
 8. Implement trade-history storage, indexing, filtering, and reconciliation
 9. Implement the five-level AI arbitrage analysis pipeline, risk controls, settlement verification, and arbitrage history
 10. Implement wallet balances, held-coin views, approvals, transaction history, KYC onboarding, and trust/privacy sections in the Home menu
-11. Validate on testnets and create a production launch checklist
+11. Deploy globally with multi-region health checks, provider failover, replication, backups, observability, and rollback procedures
+12. Validate on testnets and create a production launch checklist
 
 ## Contribution expectations
 
