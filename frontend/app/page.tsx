@@ -9,7 +9,7 @@ type Candle = [number, number, number, number, number];
 
 declare global { interface Window { ethereum?: EthereumProvider } }
 
-const ADMIN_BACKEND_URL = 'https://www.cryptotrade.agency/admin';
+const ADMIN_BACKEND_URL = process.env.NEXT_PUBLIC_ADMIN_BACKEND_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3000/admin' : 'https://www.cryptotrade.agency/admin');
 const navItems: { id: Tab; label: string; icon: string }[] = [
   { id: 'home', label: 'Home', icon: '⌂' }, { id: 'trade', label: 'Trade', icon: '↔' },
   { id: 'arbitrage', label: 'AI Arbitrage', icon: '✦' }, { id: 'wallet', label: 'Wallet', icon: '◈' },

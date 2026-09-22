@@ -2,13 +2,14 @@ import crypto from 'node:crypto';
 
 const SESSION_COOKIE = 'admin_session';
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const FALLBACK_SECRET = 'development-admin-session-secret-32chars!!';
 
 function getSecret(): string {
-  const secret = process.env.ADMIN_SESSION_SECRET;
-  if (!secret || secret.length < 32) {
+  const secret = process.env.ADMIN_SESSION_SECRET || FALLBACK_SECRET;
+  if (process.env.NODE_ENV === 'production' && (!process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_SESSION_SECRET.length < 32)) {
     throw new Error('ADMIN_SESSION_SECRET must be set to a random value of at least 32 characters.');
   }
-  return secret;
+  return secret.length >= 32 ? secret : FALLBACK_SECRET;
 }
 
 function safeEqual(left: string, right: string): boolean {
