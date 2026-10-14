@@ -14,3 +14,5 @@ Configure `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, and `ADMIN_SESSION_SECRET` in
 Build and run the production app with `npm run build` and `npm start`.
 
 Admin operations currently use in-memory demo data. It resets when the server process restarts and is not suitable for persistent, multi-region production data.
+
+The admin trade outcome, arbitrage auto-approval, cycle, and balance controls operate only on this fictional demo data. Arbitrage demo cycles use the documented level durations and targets; generated demo credits do not represent real execution, profit, or wallet balances.

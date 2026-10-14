@@ -6,8 +6,21 @@ type User = { id: string; name: string; email: string; role: string };
 type KycItem = { id: number; userId: string; user: string; email: string; risk: string; status: string; notes: string };
 type SupportItem = { id: number; userId: string; user: string; priority: string; status: string; preview: string };
 type TradeItem = { id: string; userId: string; user: string; pair: string; side: string; amount: string; status: string };
-type WalletItem = { id: number; userId: string; user: string; wallet: string; network: string; points: number; status: string };
-type ArbitrageItem = { id: string; userId: string; user: string; level: string; cycle: string; result: string; profit: string; status: string };
+type WalletItem = { id: number; userId: string; user: string; wallet: string; network: string; points: number; demoBalance: number; status: string };
+type ArbitrageItem = {
+  id: string;
+  userId: string;
+  user: string;
+  level: string;
+  cycle: string;
+  capital: number;
+  targetProfitPercent: number;
+  cycleEndsAt: string | null;
+  demoCredit: number | null;
+  result: string;
+  profit: string;
+  status: string;
+};
 type MarketItem = { pair: string; price: number; change: number };
 type OperationsState = {
   users: User[];
@@ -17,6 +30,7 @@ type OperationsState = {
   wallets: WalletItem[];
   arbitrage: ArbitrageItem[];
   markets: MarketItem[];
+  autoApproveArbitrage: boolean;
   updatedAt: string;
 };
 
@@ -43,20 +57,21 @@ const state = globalOperations.adminOperationsState ??= {
     { id: 'TR-1050', userId: 'USR-1003', user: 'Noah Chen', pair: 'SOL/USDC', side: 'Buy', amount: '245 SOL', status: 'Failed' },
   ],
   wallets: [
-    { id: 1, userId: 'USR-1001', user: 'Jessamy Cabral', wallet: '0x9F4a...7C2B', network: 'Ethereum', points: 2400, status: 'Active' },
-    { id: 2, userId: 'USR-1002', user: 'Ava Romero', wallet: '0x8A2d...1afD', network: 'Polygon', points: 1840, status: 'Review' },
-    { id: 3, userId: 'USR-1003', user: 'Noah Chen', wallet: '0x4C1e...2DfA', network: 'BNB', points: 960, status: 'Active' },
+    { id: 1, userId: 'USR-1001', user: 'Jessamy Cabral', wallet: '0x9F4a...7C2B', network: 'Ethereum', points: 2400, demoBalance: 0, status: 'Active' },
+    { id: 2, userId: 'USR-1002', user: 'Ava Romero', wallet: '0x8A2d...1afD', network: 'Polygon', points: 1840, demoBalance: 0, status: 'Review' },
+    { id: 3, userId: 'USR-1003', user: 'Noah Chen', wallet: '0x4C1e...2DfA', network: 'BNB', points: 960, demoBalance: 0, status: 'Active' },
   ],
   arbitrage: [
-    { id: 'ARB-901', userId: 'USR-1001', user: 'Jessamy Cabral', level: 'Level 2', cycle: '3 days', result: 'Profitable', profit: '+1.8%', status: 'Settled' },
-    { id: 'ARB-902', userId: 'USR-1002', user: 'Ava Romero', level: 'Level 1', cycle: '2 days', result: 'Pending', profit: '+0.9%', status: 'Open' },
-    { id: 'ARB-903', userId: 'USR-1003', user: 'Noah Chen', level: 'Level 3', cycle: '5 days', result: 'Closed', profit: '-0.2%', status: 'Rejected' },
+    { id: 'ARB-901', userId: 'USR-1001', user: 'Jessamy Cabral', level: 'Level 2', cycle: '3 days', capital: 30000, targetProfitPercent: 1.5, cycleEndsAt: null, demoCredit: null, result: 'Pending', profit: 'Target 1.5%', status: 'Open' },
+    { id: 'ARB-902', userId: 'USR-1002', user: 'Ava Romero', level: 'Level 1', cycle: '2 days', capital: 1000, targetProfitPercent: 1, cycleEndsAt: null, demoCredit: null, result: 'Pending', profit: 'Target 1%', status: 'Open' },
+    { id: 'ARB-903', userId: 'USR-1003', user: 'Noah Chen', level: 'Level 3', cycle: '5 days', capital: 50000, targetProfitPercent: 3, cycleEndsAt: null, demoCredit: null, result: 'Rejected', profit: 'Target 3%', status: 'Rejected' },
   ],
   markets: [
     { pair: 'BTC/USDT', price: 64280.12, change: 1.24 },
     { pair: 'ETH/USDC', price: 3188.45, change: -0.32 },
     { pair: 'SOL/USDC', price: 147.82, change: 2.08 },
   ],
+  autoApproveArbitrage: false,
   updatedAt: new Date().toISOString(),
 };
 
@@ -66,6 +81,42 @@ function isAdmin(request: NextRequest) {
 
 function snapshot() {
   return { serverTime: new Date().toISOString(), ...state };
+}
+
+const cycleDurationMs: Record<string, number> = {
+  'Level 1': 2 * 24 * 60 * 60 * 1000,
+  'Level 2': 3 * 24 * 60 * 60 * 1000,
+  'Level 3': 5 * 24 * 60 * 60 * 1000,
+  'Level 4': 7 * 24 * 60 * 60 * 1000,
+  'Level 5': 15 * 24 * 60 * 60 * 1000,
+};
+
+function approveOpenCycles() {
+  const now = Date.now();
+  for (const cycle of state.arbitrage) {
+    if (cycle.status !== 'Open') continue;
+    cycle.status = 'Approved';
+    cycle.cycleEndsAt = new Date(now + (cycleDurationMs[cycle.level] || 0)).toISOString();
+  }
+}
+
+function settleCompletedCycles() {
+  const now = Date.now();
+  let changed = false;
+  for (const cycle of state.arbitrage) {
+    if (cycle.status !== 'Approved' || !cycle.cycleEndsAt || Date.parse(cycle.cycleEndsAt) > now) continue;
+    const simulatedProfit = cycle.capital * cycle.targetProfitPercent / 100;
+    const demoCredit = cycle.capital + simulatedProfit;
+    const wallet = state.wallets.find((item) => item.userId === cycle.userId);
+    if (!wallet) continue;
+    wallet.demoBalance += demoCredit;
+    cycle.demoCredit = demoCredit;
+    cycle.profit = `$${simulatedProfit.toFixed(2)} simulated`;
+    cycle.result = 'Settled (simulated)';
+    cycle.status = 'Settled';
+    changed = true;
+  }
+  if (changed) saveUpdate();
 }
 
 function updateById<K extends 'kyc' | 'support' | 'trades'>(
@@ -88,6 +139,7 @@ function saveUpdate() {
 
 export async function GET(request: NextRequest) {
   if (!isAdmin(request)) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+  settleCompletedCycles();
   return NextResponse.json(snapshot());
 }
 
@@ -103,7 +155,14 @@ export async function PATCH(request: NextRequest) {
 
   const { action, id, userId, status, amount, operation } = body;
 
-  if (action === 'kyc-status') {
+  if (action === 'demo-trade-outcome') {
+    if (status !== 'Win' && status !== 'Lose') return NextResponse.json({ error: 'Invalid simulated trade outcome.' }, { status: 400 });
+    state.trades = state.trades.map((trade) => ({ ...trade, status }));
+  } else if (action === 'demo-arbitrage-auto-approve') {
+    if (typeof body.enabled !== 'boolean') return NextResponse.json({ error: 'Auto-approval setting must be true or false.' }, { status: 400 });
+    state.autoApproveArbitrage = body.enabled;
+    if (state.autoApproveArbitrage) approveOpenCycles();
+  } else if (action === 'kyc-status') {
     if (!['Approved', 'Rejected'].includes(String(status))) return NextResponse.json({ error: 'Invalid KYC status.' }, { status: 400 });
     if (!updateById('kyc', String(id), (item) => ({ ...item, status: String(status) }))) return NextResponse.json({ error: 'KYC case not found.' }, { status: 404 });
   } else if (action === 'trade-status') {

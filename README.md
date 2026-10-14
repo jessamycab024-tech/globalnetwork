@@ -234,7 +234,7 @@ Requirements:
 - the admin is allowed to monitor customer support messages, review support history, and manage operational controls
 - the admin may pause or resume trading, arbitrage, or support features if needed
 - the admin may review risk events and execution data
-- the admin may not arbitrarily assign winning or losing outcomes to users
+- the admin must never assign actual user trade outcomes; any win/loss controls in the admin UI are confined to clearly labeled fictional demo records
 - all admin actions must be logged with actor, timestamp, target, reason, and result
 - user support should remain linked to the authenticated user and wallet context
 
