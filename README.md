@@ -13,7 +13,7 @@ GlobalNetwork is designed as a non-custodial crypto wallet experience that combi
 - Direct customer support and secure support messaging
 - Globally available, live-data infrastructure with stable failover behavior
 
-This repository is intentionally structured for a future production-ready dApp, with clear separation between frontend UX, backend services, data providers, and contract integrations.
+This repository is intentionally structured for a future production-ready dApp, with the frontend and server-side API routes deployed together and clear separation from data providers and contract integrations.
 
 ## Global live-data and stability requirements
 
@@ -234,7 +234,7 @@ Requirements:
 - the admin is allowed to monitor customer support messages, review support history, and manage operational controls
 - the admin may pause or resume trading, arbitrage, or support features if needed
 - the admin may review risk events and execution data
-- the admin may not arbitrarily assign winning or losing outcomes to users
+- the admin must never assign actual user trade outcomes; any win/loss controls in the admin UI are confined to clearly labeled fictional demo records
 - all admin actions must be logged with actor, timestamp, target, reason, and result
 - user support should remain linked to the authenticated user and wallet context
 
@@ -252,8 +252,7 @@ Customer support and admin controls should be clearly separated from wallet cust
 ## Planned repository structure
 
 ```text
-frontend/        User-facing wallet, dashboard, trading, charts, AI dashboard, and floating support UI
-backend/         APIs, market data services, execution orchestration, trade history, arbitrage jobs, support control, and admin policy
+frontend/        Single Next.js app: user-facing UI and server-side admin API routes
 contracts/       Smart contract interfaces, ABIs, deployment metadata, and integrations
 docs/            Architecture, product, and risk documentation
 .github/         PR automation, issue templates, and workflow files
@@ -262,11 +261,15 @@ docs/            Architecture, product, and risk documentation
 ## Recommended architecture
 
 ```text
-Wallet user login -> Frontend tabs -> Backend API -> Market Data + AI Analysis -> User decision -> Wallet signature
-Admin web login -> Admin portal -> Admin controls -> Support, policies, risk review, and system operations
+Wallet user login -> Next.js frontend -> Next.js API routes -> Market Data + AI Analysis -> User decision -> Wallet signature
+Admin web login -> Next.js admin portal and API routes -> Support, policies, risk review, and system operations
 ```
 
-The frontend remains the presentation and signing layer. The backend provides read-only market insights and operational services. No private key or seed phrase should be stored in the app or repository.
+The frontend and server-side API routes are part of one Next.js deployment. No separate backend service is required. No private key or seed phrase should be stored in the app or repository.
+
+### Single-app deployment
+
+Deploy the `frontend` directory as the application root. Configure `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, and `ADMIN_SESSION_SECRET` in that app's environment; production requires a 32-character-or-longer session secret. Admin operations currently use in-memory demo data and are not durable or shared across server instances, so connect a persistent shared database before production use.
 
 ## Security and trust model
 

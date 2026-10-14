@@ -41,6 +41,7 @@ type WalletItem = {
   wallet: string;
   network: string;
   points: number;
+  demoBalance: number;
   status: 'Active' | 'Review';
 };
 
@@ -48,11 +49,15 @@ type ArbitrageItem = {
   id: string;
   userId: string;
   user: string;
-  level: 'Level 1' | 'Level 2' | 'Level 3';
+  level: 'Level 1' | 'Level 2' | 'Level 3' | 'Level 4' | 'Level 5';
   cycle: string;
-  result: 'Profitable' | 'Pending' | 'Closed';
+  capital: number;
+  targetProfitPercent: number;
+  cycleEndsAt: string | null;
+  demoCredit: number | null;
+  result: string;
   profit: string;
-  status: 'Open' | 'Settled' | 'Rejected';
+  status: 'Open' | 'Approved' | 'Settled' | 'Rejected';
 };
 
 type UserItem = {
@@ -78,6 +83,7 @@ type OperationsData = {
   wallets: WalletItem[];
   arbitrage: ArbitrageItem[];
   markets: MarketItem[];
+  autoApproveArbitrage: boolean;
 };
 
 const emptyOperations: OperationsData = {
@@ -90,6 +96,7 @@ const emptyOperations: OperationsData = {
   wallets: [],
   arbitrage: [],
   markets: [],
+  autoApproveArbitrage: false,
 };
 
 const tabs: { id: Tab; label: string }[] = [
@@ -118,9 +125,10 @@ export default function AdminDashboardPage() {
   const [actionPending, setActionPending] = useState(false);
   const [pointDelta, setPointDelta] = useState('100');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [autoApproveArbitrage, setAutoApproveArbitrage] = useState(false);
 
   const selectedWallet = useMemo(
-    () => walletRows.find((wallet) => wallet.userId === selectedUserId) ?? walletRows[0] ?? { id: 0, userId: '', user: 'No wallet selected', wallet: '—', network: '—', points: 0, status: 'Active' },
+    () => walletRows.find((wallet) => wallet.userId === selectedUserId) ?? walletRows[0] ?? { id: 0, userId: '', user: 'No wallet selected', wallet: '—', network: '—', points: 0, demoBalance: 0, status: 'Active' },
     [selectedUserId, walletRows],
   );
 
@@ -157,6 +165,7 @@ export default function AdminDashboardPage() {
     setWalletRows(data.wallets);
     setArbitrageRows(data.arbitrage);
     setMarkets(data.markets);
+    setAutoApproveArbitrage(data.autoApproveArbitrage);
     setLastSync(new Date(data.serverTime || data.updatedAt).toLocaleTimeString());
     setSelectedUserId((current) => data.wallets.some((wallet) => wallet.userId === current) ? current : data.wallets[0]?.userId ?? '');
     setDataError('');
@@ -164,11 +173,11 @@ export default function AdminDashboardPage() {
 
   async function loadOperations() {
     const response = await fetch('/api/admin/operations', { cache: 'no-store' });
-    if (!response.ok) throw new Error('Unable to load backend operations data.');
+    if (!response.ok) throw new Error('Unable to load operations data.');
     applyOperationsData(await response.json());
   }
 
-  async function sendOperation(payload: Record<string, string | number>) {
+  async function sendOperation(payload: Record<string, string | number | boolean>) {
     setActionPending(true);
     try {
       const response = await fetch('/api/admin/operations', {
@@ -201,7 +210,7 @@ export default function AdminDashboardPage() {
           await loadOperations();
         }
       } catch {
-        if (!cancelled) setDataError('Backend data is unavailable. Start the backend service on port 4000.');
+        if (!cancelled) setDataError('Operations data is unavailable. Check the application server and try again.');
       } finally {
         if (!cancelled) setChecked(true);
       }
@@ -215,7 +224,7 @@ export default function AdminDashboardPage() {
     if (!checked) return;
     const interval = window.setInterval(() => {
       if (actionPending) return;
-      loadOperations().catch(() => setDataError('Live backend refresh failed. Showing last known data.'));
+      loadOperations().catch(() => setDataError('Operations refresh failed. Showing last known data.'));
     }, 5000);
     return () => window.clearInterval(interval);
   }, [checked, actionPending]);
@@ -240,6 +249,14 @@ export default function AdminDashboardPage() {
     sendOperation({ action: 'trade-status', id, status }).catch((error) => setDataError(error.message));
   }
 
+  function setAllDemoTradeOutcomes(status: 'Win' | 'Lose') {
+    sendOperation({ action: 'demo-trade-outcome', status }).catch((error) => setDataError(error.message));
+  }
+
+  function setDemoArbitrageAutoApprove(enabled: boolean) {
+    sendOperation({ action: 'demo-arbitrage-auto-approve', enabled }).catch((error) => setDataError(error.message));
+  }
+
   function handleSupportResolve(id: number) {
     sendOperation({ action: 'support-status', id, status: 'Resolved' }).catch((error) => setDataError(error.message));
   }
@@ -261,7 +278,7 @@ export default function AdminDashboardPage() {
           <div>
             <p className="eyebrow">Admin dashboard</p>
             <h1>Welcome{username ? `, ${username}` : ''}<span className="accent">.</span></h1>
-            <p className="muted">Live backend sync · {lastSync}</p>
+            <p className="muted">Application sync · {lastSync}</p>
             {dataError && <p className="admin-error">{dataError}</p>}
           </div>
           <div className="dashboard-controls">
@@ -276,6 +293,7 @@ export default function AdminDashboardPage() {
             <button className="primary-button" onClick={logout}>Sign out</button>
           </div>
         </div>
+        <div className="alert">SIMULATION ONLY — all users, trades, outcomes, cycles, and credits below are fictional demo data. No real trades or wallet funds are affected.</div>
 
         <div className="admin-tab-list" role="tablist" aria-label="Admin sections">
           {tabs.map((tab) => (
@@ -398,7 +416,14 @@ export default function AdminDashboardPage() {
 
         {activeTab === 'trades' && (
           <section className="admin-section">
-            <h2>Trade control</h2>
+            <div>
+              <h2>Demo trade outcomes · all users</h2>
+              <p className="muted">These controls only change fictional trade statuses across every demo user.</p>
+              <div className="inline-actions">
+                <button className="mini-button success" onClick={() => setAllDemoTradeOutcomes('Win')} disabled={actionPending}>Set all demo trades to Win</button>
+                <button className="mini-button danger" onClick={() => setAllDemoTradeOutcomes('Lose')} disabled={actionPending}>Set all demo trades to Lose</button>
+              </div>
+            </div>
             <div className="table-wrap">
               <table>
                 <thead>
@@ -425,9 +450,8 @@ export default function AdminDashboardPage() {
                       <td><span className={`status-chip ${trade.status.toLowerCase()}`}>{trade.status}</span></td>
                       <td>
                         <div className="inline-actions">
-                          <button className="mini-button success" onClick={() => handleTradeAction(trade.id, 'Win')} disabled={actionPending}>Win</button>
-                          <button className="mini-button danger" onClick={() => handleTradeAction(trade.id, 'Lose')} disabled={actionPending}>Lose</button>
-                          <button className="secondary-button" onClick={() => handleTradeAction(trade.id, 'Executed')} disabled={actionPending}>Execute</button>
+                          <button className="mini-button success" onClick={() => handleTradeAction(trade.id, 'Win')} disabled={actionPending}>Demo Win</button>
+                          <button className="mini-button danger" onClick={() => handleTradeAction(trade.id, 'Lose')} disabled={actionPending}>Demo Lose</button>
                         </div>
                       </td>
                     </tr>
@@ -448,6 +472,7 @@ export default function AdminDashboardPage() {
                 <div className="detail-row"><span>Wallet</span><strong>{selectedWallet.wallet}</strong></div>
                 <div className="detail-row"><span>Network</span><strong>{selectedWallet.network}</strong></div>
                 <div className="detail-row"><span>Points</span><strong>{selectedWallet.points}</strong></div>
+                <div className="detail-row"><span>Demo balance (simulated USDT)</span><strong>${selectedWallet.demoBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
               </div>
 
               <div className="wallet-controls">
@@ -466,7 +491,19 @@ export default function AdminDashboardPage() {
 
         {activeTab === 'arbitrage' && (
           <section className="admin-section">
-            <h2>AI arbitrage history</h2>
+            <div>
+              <h2>AI arbitrage simulation · all users</h2>
+              <p className="muted">Auto-approval starts the documented demo cycle. At cycle completion, the target-based simulated capital and profit are added to the demo balance only.</p>
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={autoApproveArbitrage}
+                  disabled={actionPending}
+                  onChange={(event) => setDemoArbitrageAutoApprove(event.target.checked)}
+                />
+                Automatically approve open demo cycles for all users
+              </label>
+            </div>
             <div className="table-wrap">
               <table>
                 <thead>
@@ -475,9 +512,11 @@ export default function AdminDashboardPage() {
                     <th>User ID</th>
                     <th>User</th>
                     <th>Level</th>
-                    <th>Cycle</th>
+                    <th>Capital (demo)</th>
+                    <th>Cycle / completion</th>
                     <th>Result</th>
-                    <th>Profit</th>
+                    <th>Target / simulated profit</th>
+                    <th>Demo credit</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -488,9 +527,11 @@ export default function AdminDashboardPage() {
                       <td>{row.userId}</td>
                       <td>{row.user}</td>
                       <td>{row.level}</td>
-                      <td>{row.cycle}</td>
+                      <td>${row.capital.toLocaleString()} USDT</td>
+                      <td>{row.cycle}{row.cycleEndsAt ? <small className="muted">Ends {new Date(row.cycleEndsAt).toLocaleString()}</small> : null}</td>
                       <td>{row.result}</td>
                       <td>{row.profit}</td>
+                      <td>{row.demoCredit === null ? '—' : `$${row.demoCredit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} simulated`}</td>
                       <td><span className={`status-chip ${row.status.toLowerCase()}`}>{row.status}</span></td>
                     </tr>
                   ))}
