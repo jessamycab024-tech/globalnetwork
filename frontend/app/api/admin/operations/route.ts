@@ -149,6 +149,9 @@ export async function PATCH(request: NextRequest) {
   let body: Record<string, unknown>;
   try {
     body = await request.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+    }
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
   }
