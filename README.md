@@ -13,7 +13,7 @@ GlobalNetwork is designed as a non-custodial crypto wallet experience that combi
 - Direct customer support and secure support messaging
 - Globally available, live-data infrastructure with stable failover behavior
 
-This repository is intentionally structured for a future production-ready dApp, with clear separation between frontend UX, backend services, data providers, and contract integrations.
+This repository is intentionally structured for a future production-ready dApp, with the frontend and server-side API routes deployed together and clear separation from data providers and contract integrations.
 
 ## Global live-data and stability requirements
 
