@@ -164,7 +164,7 @@ export default function AdminDashboardPage() {
 
   async function loadOperations() {
     const response = await fetch('/api/admin/operations', { cache: 'no-store' });
-    if (!response.ok) throw new Error('Unable to load backend operations data.');
+    if (!response.ok) throw new Error('Unable to load operations data.');
     applyOperationsData(await response.json());
   }
 
@@ -201,7 +201,7 @@ export default function AdminDashboardPage() {
           await loadOperations();
         }
       } catch {
-        if (!cancelled) setDataError('Backend data is unavailable. Start the backend service on port 4000.');
+        if (!cancelled) setDataError('Operations data is unavailable. Check the application server and try again.');
       } finally {
         if (!cancelled) setChecked(true);
       }
@@ -215,7 +215,7 @@ export default function AdminDashboardPage() {
     if (!checked) return;
     const interval = window.setInterval(() => {
       if (actionPending) return;
-      loadOperations().catch(() => setDataError('Live backend refresh failed. Showing last known data.'));
+      loadOperations().catch(() => setDataError('Operations refresh failed. Showing last known data.'));
     }, 5000);
     return () => window.clearInterval(interval);
   }, [checked, actionPending]);
@@ -261,7 +261,7 @@ export default function AdminDashboardPage() {
           <div>
             <p className="eyebrow">Admin dashboard</p>
             <h1>Welcome{username ? `, ${username}` : ''}<span className="accent">.</span></h1>
-            <p className="muted">Live backend sync · {lastSync}</p>
+            <p className="muted">Application sync · {lastSync}</p>
             {dataError && <p className="admin-error">{dataError}</p>}
           </div>
           <div className="dashboard-controls">

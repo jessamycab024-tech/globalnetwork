@@ -252,8 +252,7 @@ Customer support and admin controls should be clearly separated from wallet cust
 ## Planned repository structure
 
 ```text
-frontend/        User-facing wallet, dashboard, trading, charts, AI dashboard, and floating support UI
-backend/         APIs, market data services, execution orchestration, trade history, arbitrage jobs, support control, and admin policy
+frontend/        Single Next.js app: user-facing UI and server-side admin API routes
 contracts/       Smart contract interfaces, ABIs, deployment metadata, and integrations
 docs/            Architecture, product, and risk documentation
 .github/         PR automation, issue templates, and workflow files
@@ -262,11 +261,15 @@ docs/            Architecture, product, and risk documentation
 ## Recommended architecture
 
 ```text
-Wallet user login -> Frontend tabs -> Backend API -> Market Data + AI Analysis -> User decision -> Wallet signature
-Admin web login -> Admin portal -> Admin controls -> Support, policies, risk review, and system operations
+Wallet user login -> Next.js frontend -> Next.js API routes -> Market Data + AI Analysis -> User decision -> Wallet signature
+Admin web login -> Next.js admin portal and API routes -> Support, policies, risk review, and system operations
 ```
 
-The frontend remains the presentation and signing layer. The backend provides read-only market insights and operational services. No private key or seed phrase should be stored in the app or repository.
+The frontend and server-side API routes are part of one Next.js deployment. No separate backend service is required. No private key or seed phrase should be stored in the app or repository.
+
+### Single-app deployment
+
+Deploy the `frontend` directory as the application root. Configure `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, and `ADMIN_SESSION_SECRET` in that app's environment; production requires a 32-character-or-longer session secret. Admin operations currently use in-memory demo data and are not durable or shared across server instances, so connect a persistent shared database before production use.
 
 ## Security and trust model
 

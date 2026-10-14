@@ -1,19 +1,12 @@
-# Backend service layout
+# Backend API in the Next.js app
 
-```text
-backend/
-├── api/{auth,users,markets,trades,arbitrage,wallets,support,admin}
-├── domain/          validation, policies, and business rules
-├── providers/       RPC, indexer, market-data, and KYC adapters
-├── workers/         refresh, indexing, settlement, and reconciliation jobs
-├── persistence/     models, migrations, and repositories
-├── security/        sessions, rate limits, audit events, and secrets
-└── observability/   logs, metrics, tracing, and alerts
-```
+The frontend and admin API are deployed together as one Next.js application. Admin login, session, logout, and operations endpoints are implemented as route handlers under `frontend/app/api/admin/`.
+
+The operations endpoint currently uses in-memory demo data. It is useful for development only: it resets when the server process restarts and is not shared between instances or regions. Production operations require a durable shared database and real user, execution, and support data sources.
 
 ## Direct support
 
-- Authenticated users send direct messages from the floating frontend panel.
+- Authenticated users should send direct messages from the floating frontend panel.
 - Messages are stored with user ID, wallet context, timestamps, read state, and retention policy.
 - The admin can view and reply to conversations from the admin control surface.
 - No ticket form is required, and support must never request private keys or seed phrases.
@@ -27,7 +20,7 @@ backend/
 - Never authorize admin access from client-provided roles, email fields, cookies, or local storage.
 - Audit every admin action with actor, action, target, timestamp, reason, and result.
 
-The admin may pause trading or arbitrage, review execution and support data, manage risk limits, and respond to users. The admin must not arbitrarily assign winning or losing outcomes. Results must come from verified execution, fees, slippage, and settlement data.
+Any production admin controls must be audited and backed by verified execution data. The admin must not arbitrarily assign winning or losing outcomes. Results must come from verified execution, fees, slippage, and settlement data.
 
 ## Arbitrage settlement
 
