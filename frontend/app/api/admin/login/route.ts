@@ -59,6 +59,9 @@ export async function POST(request: NextRequest) {
   let body: { username?: string; password?: string };
   try {
     body = await request.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+    }
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
   }
