@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 type Tab = 'overview' | 'kyc' | 'support' | 'trades' | 'wallet' | 'arbitrage';
@@ -157,7 +157,7 @@ export default function AdminDashboardPage() {
     [selectedUserId, users],
   );
 
-  function applyOperationsData(data: OperationsData) {
+  const applyOperationsData = useCallback((data: OperationsData) => {
     setUsers(data.users);
     setKycRows(data.kyc);
     setSupportThreads(data.support);
@@ -169,13 +169,13 @@ export default function AdminDashboardPage() {
     setLastSync(new Date(data.serverTime || data.updatedAt).toLocaleTimeString());
     setSelectedUserId((current) => data.wallets.some((wallet) => wallet.userId === current) ? current : data.wallets[0]?.userId ?? '');
     setDataError('');
-  }
+  }, []);
 
-  async function loadOperations() {
+  const loadOperations = useCallback(async () => {
     const response = await fetch('/api/admin/operations', { cache: 'no-store' });
     if (!response.ok) throw new Error('Unable to load operations data.');
     applyOperationsData(await response.json());
-  }
+  }, [applyOperationsData]);
 
   async function sendOperation(payload: Record<string, string | number | boolean>) {
     setActionPending(true);
@@ -218,7 +218,7 @@ export default function AdminDashboardPage() {
 
     checkSession();
     return () => { cancelled = true; };
-  }, [router]);
+  }, [router, loadOperations]);
 
   useEffect(() => {
     if (!checked) return;
@@ -227,7 +227,7 @@ export default function AdminDashboardPage() {
       loadOperations().catch(() => setDataError('Operations refresh failed. Showing last known data.'));
     }, 5000);
     return () => window.clearInterval(interval);
-  }, [checked, actionPending]);
+  }, [checked, actionPending, loadOperations]);
 
   async function logout() {
     await fetch('/api/admin/logout', { method: 'POST' });
@@ -341,7 +341,8 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="detail-panel">
-                <h2>Static demo market snapshot</h2>
+                <h2>Demo market snapshot</h2>
+                <p className="muted">Static sample prices for demonstration only; not a live market feed.</p>
                 <ul className="activity-list">
                   {markets.map((market) => (
                     <li key={market.pair}>{market.pair}: ${market.price.toLocaleString()} ({market.change > 0 ? '+' : ''}{market.change}%)</li>
