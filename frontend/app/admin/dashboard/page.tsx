@@ -341,7 +341,7 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="detail-panel">
-                <h2>Real-time market data</h2>
+                <h2>Static demo market snapshot</h2>
                 <ul className="activity-list">
                   {markets.map((market) => (
                     <li key={market.pair}>{market.pair}: ${market.price.toLocaleString()} ({market.change > 0 ? '+' : ''}{market.change}%)</li>
