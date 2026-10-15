@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import CustomerService from './components/SupportChat';
 
 type Tab = 'home' | 'trade' | 'arbitrage' | 'wallet' | 'kyc' | 'profile' | 'about' | 'trust' | 'office';
 type EthereumProvider = { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
@@ -9,7 +10,6 @@ type Candle = [number, number, number, number, number];
 
 declare global { interface Window { ethereum?: EthereumProvider } }
 
-const ADMIN_URL = '/admin';
 const navItems: { id: Tab; label: string; icon: string }[] = [
   { id: 'home', label: 'Home', icon: '⌂' }, { id: 'trade', label: 'Trade', icon: '↔' },
   { id: 'arbitrage', label: 'AI Arbitrage', icon: '✦' }, { id: 'wallet', label: 'Wallet', icon: '◈' },
@@ -24,6 +24,7 @@ const fallbackCoins: Coin[] = [
 ];
 
 export default function HomePage() {
+  const [supportOpen, setSupportOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('home'); const [wallet, setWallet] = useState('');
   const [nativeBalance, setNativeBalance] = useState<string | null>(null); const [walletError, setWalletError] = useState('');
   const [menuOpen, setMenuOpen] = useState(false); const [coins, setCoins] = useState<Coin[]>(fallbackCoins);
@@ -42,7 +43,7 @@ export default function HomePage() {
     { id: 'trust', label: 'Trust & Security' },
     { id: 'office', label: 'Office: New York, USA' },
   ];
-  return <main className="app-shell"><header className="topbar"><button className="brand" onClick={() => setActiveTab('home')} aria-label="Go to home"><span className="brand-mark">G</span><span>GlobalNetwork</span></button><div className="topbar-actions"><span className="live-indicator"><i /> {dataStatus}</span><button className="wallet-button" onClick={connectWallet}>{shortWallet || 'Connect wallet'}</button><button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Open menu" aria-expanded={menuOpen}>☰</button></div></header>{menuOpen && <aside className="account-menu"><div className="menu-title">Account & trust</div>{accountItems.map((item) => <button key={item.id} onClick={() => { setActiveTab(item.id); setMenuOpen(false); }}>{item.label}</button>)}</aside>}<div className="layout"><nav className="sidebar"><div className="nav-label">Workspace</div>{navItems.map((item) => <button key={item.id} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => setActiveTab(item.id)}><span>{item.icon}</span>{item.label}</button>)}<div className="sidebar-spacer" /><div className="security-note"><span>✓</span><div><strong>Non-custodial</strong><small>You control your keys</small></div></div></nav><section className="content">{walletError && <div className="alert">{walletError}</div>}{activeTab === 'home' && <HomeTab wallet={shortWallet} nativeBalance={nativeBalance} coins={filteredCoins} search={coinSearch} setSearch={setCoinSearch} status={dataStatus} onConnect={connectWallet} />}{activeTab === 'trade' && <TradeTab coins={coins} />}{activeTab === 'arbitrage' && <ArbitrageTab />}{activeTab === 'wallet' && <WalletTab wallet={shortWallet} nativeBalance={nativeBalance} onConnect={connectWallet} />}{activeTab === 'kyc' && <KycTab />}{activeTab === 'profile' && <ProfileTab wallet={wallet} shortWallet={shortWallet} onConnect={connectWallet} />}{activeTab === 'about' && <AboutTab />}{activeTab === 'trust' && <TrustTab />}{activeTab === 'office' && <OfficeTab />}</section></div><button className="support-fab" onClick={() => window.open(ADMIN_URL, '_blank', 'noopener,noreferrer')} aria-label="Open customer support">✦ <span>Support</span></button></main>;
+  return <><div hidden={supportOpen}><main className="app-shell"><header className="topbar"><button className="brand" onClick={() => setActiveTab('home')} aria-label="Go to home"><span className="brand-mark">G</span><span>GlobalNetwork</span></button><div className="topbar-actions"><span className="live-indicator"><i /> {dataStatus}</span><button className="wallet-button" onClick={connectWallet}>{shortWallet || 'Connect wallet'}</button><button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="Open menu" aria-expanded={menuOpen}>☰</button></div></header>{menuOpen && <aside className="account-menu"><div className="menu-title">Account & trust</div>{accountItems.map((item) => <button key={item.id} onClick={() => { setActiveTab(item.id); setMenuOpen(false); }}>{item.label}</button>)}</aside>}<div className="layout"><nav className="sidebar"><div className="nav-label">Workspace</div>{navItems.map((item) => <button key={item.id} className={`nav-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => setActiveTab(item.id)}><span>{item.icon}</span>{item.label}</button>)}<div className="sidebar-spacer" /><div className="security-note"><span>✓</span><div><strong>Non-custodial</strong><small>You control your keys</small></div></div></nav><section className="content">{walletError && <div className="alert">{walletError}</div>}{activeTab === 'home' && <HomeTab wallet={shortWallet} nativeBalance={nativeBalance} coins={filteredCoins} search={coinSearch} setSearch={setCoinSearch} status={dataStatus} onConnect={connectWallet} />}{activeTab === 'trade' && <TradeTab coins={coins} />}{activeTab === 'arbitrage' && <ArbitrageTab />}{activeTab === 'wallet' && <WalletTab wallet={shortWallet} nativeBalance={nativeBalance} onConnect={connectWallet} />}{activeTab === 'kyc' && <KycTab />}{activeTab === 'profile' && <ProfileTab wallet={wallet} shortWallet={shortWallet} onConnect={connectWallet} />}{activeTab === 'about' && <AboutTab />}{activeTab === 'trust' && <TrustTab />}{activeTab === 'office' && <OfficeTab />}</section></div><button className="support-fab" onClick={() => { setMenuOpen(false); setSupportOpen(true); }} aria-label="Open customer support">✦ <span>Support</span></button></main></div>{supportOpen && <CustomerService onClose={() => setSupportOpen(false)} />}</>;
 }
 
 function KycTab() {

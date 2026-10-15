@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AdminSupportInbox } from '../../components/SupportChat';
 
 type Tab = 'overview' | 'kyc' | 'support' | 'trades' | 'wallet' | 'arbitrage';
 
@@ -102,7 +103,7 @@ const emptyOperations: OperationsData = {
 const tabs: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'User detail' },
   { id: 'kyc', label: 'KYC' },
-  { id: 'support', label: 'Support' },
+  { id: 'support', label: 'Customer service live chat' },
   { id: 'trades', label: 'Trade control' },
   { id: 'wallet', label: 'Wallet' },
   { id: 'arbitrage', label: 'AI arbitrage' },
@@ -396,7 +397,8 @@ export default function AdminDashboardPage() {
 
         {activeTab === 'support' && (
           <section className="admin-section">
-            <h2>Customer service</h2>
+            <AdminSupportInbox />
+            <h2>Demo user support cases</h2>
             <div className="support-stack">
               {visibleSupportThreads.map((thread) => (
                 <div key={thread.id} className="support-card">

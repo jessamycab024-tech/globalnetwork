@@ -54,6 +54,14 @@ th { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-s
 .status-chip.medium, .status-chip.review, .status-chip.in-progress, .status-chip.executed { background: rgba(138, 124, 255, .12); color: #c9c1ff; }
 .status-chip.high, .status-chip.rejected, .status-chip.failed, .status-chip.lose { background: rgba(255, 119, 139, .12); color: var(--red); }
 .status-chip.approved, .status-chip.resolved, .status-chip.settled, .status-chip.win { background: rgba(81, 221, 160, .12); color: var(--green); }
+.customer-service { min-height: 100dvh; padding: clamp(12px, 4vw, 40px); display: grid; place-items: center; }
+.customer-service-panel { width: min(800px, 100%); min-width: 0; }
+.customer-service-panel h1 { margin: 0; }
+.chat-history { max-height: 45dvh; min-height: 160px; overflow-y: auto; margin: 18px 0; }
+.chat-history .chat-message { margin: 10px 0; max-width: 90%; overflow-wrap: anywhere; }
+.chat-history .chat-message.customer { margin-left: auto; background: var(--surface-2); }
+.chat-text { white-space: pre-wrap; margin-top: 8px; }
+button:disabled { cursor: not-allowed; opacity: .6; }
 .support-stack { display: grid; gap: 16px; }
 .support-card { border: 1px solid var(--line); border-radius: 14px; background: rgba(16, 26, 42, .82); padding: 18px; }
 .support-header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
