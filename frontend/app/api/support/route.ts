@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (request.headers.get('origin') && request.headers.get('origin') !== request.nextUrl.origin) {
+  if (request.headers.get('origin') && request.headers.get('origin') !== `${request.nextUrl.protocol}//${request.headers.get('host')}`) {
     return NextResponse.json({ error: 'Invalid origin.' }, { status: 403 });
   }
   const body = await request.json().catch(() => null);

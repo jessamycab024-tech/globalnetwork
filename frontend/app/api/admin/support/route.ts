@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   if (!isAdmin(request)) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
-  if (request.headers.get('origin') && request.headers.get('origin') !== request.nextUrl.origin) {
+  if (request.headers.get('origin') && request.headers.get('origin') !== `${request.nextUrl.protocol}//${request.headers.get('host')}`) {
     return NextResponse.json({ error: 'Invalid origin.' }, { status: 403 });
   }
   const body = await request.json().catch(() => null);

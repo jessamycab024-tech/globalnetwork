@@ -112,6 +112,9 @@ export default function CustomerService({ onClose }: { onClose: () => void }) {
 export function AdminSupportInbox() {
   const { data, error, ready, pending, send } = useChat(true);
   const [selectedId, setSelectedId] = useState('');
+  useEffect(() => {
+    setSelectedId((current) => data.threads?.some((thread) => thread.id === current) ? current : data.threads?.[0]?.id ?? '');
+  }, [data.threads]);
   const threads = data.threads ?? [];
   const selected = threads.find((thread) => thread.id === selectedId) ?? threads[0];
   return <section className="panel">
